@@ -1,0 +1,6 @@
+plugins {
+	// Si el computador no tiene instalado el JDK 17, Gradle lo descarga solo
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'claseJava'
