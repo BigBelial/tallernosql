@@ -1,17 +1,47 @@
+# Levanta todo: MongoDB, Redis y la aplicación.
+#   docker compose up -d --build
+# Los puertos del computador se pueden cambiar si ya están ocupados, por ejemplo:
+#   REDIS_PORT=6380 docker compose up -d --build
 services:
   mongodb:
     image: mongo:7
     container_name: library-mongodb
     ports:
-      - "27017:27017"
+      - "${MONGO_PORT:-27017}:27017"
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   redis:
     image: redis:7-alpine
     container_name: library-redis
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build: .
+    container_name: library-app
+    # La app espera a que MongoDB y Redis estén listos (si no, no alcanza a crear los índices)
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017
+      MONGODB_DATABASE: library
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "${APP_PORT:-8080}:8080"
 
 volumes:
   mongo-data:

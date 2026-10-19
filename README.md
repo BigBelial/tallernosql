@@ -2,19 +2,31 @@
 
 Ampliación de la aplicación de biblioteca vista en clase (Spring Boot 4 + MongoDB + Redis). Se agregan **usuarios**, **favoritos**, **préstamos** y **reseñas**, usando **denormalización** para que las consultas más comunes salgan con una sola lectura, y **Redis** como caché de los endpoints.
 
-## Cómo correrlo (ruta rápida)
+## Cómo correrlo (ruta rápida, solo con Docker)
 
-Requisitos: JDK 17 o superior (si no hay JDK 17, Gradle lo descarga solo) y Docker (opcional, para MongoDB y Redis locales).
+No hace falta instalar Java ni Gradle: la aplicación se compila y corre dentro de Docker.
 
-1. Levantar MongoDB y Redis locales:
+1. Levantar todo (MongoDB, Redis y la aplicación):
    ```bash
-   docker compose up -d
+   docker compose up -d --build
    ```
-2. Arrancar la aplicación:
+   Si un puerto ya está ocupado en el computador, se puede cambiar: `REDIS_PORT=6380 docker compose up -d --build` (también existen `MONGO_PORT` y `APP_PORT`).
+2. Abrir Swagger para probar todos los endpoints: <http://localhost:8080/swagger-ui.html>
+3. Probar todo automáticamente (necesita `curl` y `jq`):
    ```bash
-   ./gradlew bootRun        # Windows: gradlew.bat bootRun
+   ./scripts/prueba-endpoints.sh
    ```
-3. Abrir Swagger para probar todos los endpoints: <http://localhost:8080/swagger-ui.html>
+   Recorre todos los endpoints y reglas de negocio (préstamos, una sola copia con peticiones al mismo tiempo, vencidos, reseñas, favoritos, consistencia, Redis e índices) y muestra ✅ o ❌ en cada paso.
+4. Apagar: `docker compose down` (con `-v` también se borran los datos de MongoDB).
+
+### Con Java instalado (opcional)
+
+Con JDK 17 o superior (si no hay JDK 17, Gradle lo descarga solo):
+
+```bash
+docker compose up -d mongodb redis
+./gradlew bootRun        # Windows: gradlew.bat bootRun
+```
 
 ### Usar el MongoDB Atlas y el Redis (Upstash) de la clase
 
@@ -33,6 +45,13 @@ En Windows PowerShell: `$env:MONGODB_URI="..."` (igual para las otras dos).
 
 ```bash
 ./gradlew test
+```
+
+Sin Java instalado, las mismas pruebas se pueden correr dentro de un contenedor (el proyecto se monta en solo lectura):
+
+```bash
+docker run --rm -v "$PWD":/src:ro eclipse-temurin:17-jdk \
+  sh -c 'cp -r /src /workspace && cd /workspace && ./gradlew --no-daemon test'
 ```
 
 Las pruebas de `LoanServiceTest`, `ReviewServiceTest` y `DenormalizationServiceTest` usan mocks y **no necesitan** MongoDB ni Redis. La prueba `contextLoads` del profesor levanta la aplicación completa: si MongoDB no está corriendo, se demora unos 30 segundos esperando la conexión, pero igual pasa.
