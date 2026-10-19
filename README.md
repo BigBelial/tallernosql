@@ -1,5 +1,7 @@
 # Taller 1 NoSQL – Biblioteca con préstamos, reseñas y favoritos
 
+**Estudiante:** Juan José Ospina Sánchez · **Curso:** Bases de datos NoSQL
+
 Ampliación de la aplicación de biblioteca vista en clase (Spring Boot 4 + MongoDB + Redis). Se agregan **usuarios**, **favoritos**, **préstamos** y **reseñas**, usando **denormalización** para que las consultas más comunes salgan con una sola lectura, y **Redis** como caché de los endpoints.
 
 ## Cómo correrlo (ruta rápida, solo con Docker)
@@ -216,7 +218,7 @@ curl localhost:8080/api/loans/stats
 
 - `available` ya no se envía al crear o editar un libro: lo maneja la lógica de préstamos y siempre es lo contrario de `loaned`.
 - Los libros creados antes de este taller no tienen los campos nuevos. Las consultas los tratan como disponibles y los campos se llenan solos con el primer préstamo o la primera reseña.
-- Para generar el `.zip` de entrega sin archivos de compilación:
+- Para generar el `.zip` de entrega en el Escritorio (`nosqltallerJuanJoseOspinaSanchez.zip`, sin archivos de compilación):
   ```bash
-  zip -r taller1-nosql.zip . -x "build/*" ".gradle/*" ".git/*" ".idea/*" ".atl/*"
+  ./scripts/generar-zip.sh
   ```
