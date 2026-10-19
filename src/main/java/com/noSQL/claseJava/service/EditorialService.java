@@ -1,78 +1,28 @@
 package com.noSQL.claseJava.service;
 
-import com.noSQL.claseJava.config.CacheNames;
 import com.noSQL.claseJava.dto.EditorialRequest;
 import com.noSQL.claseJava.entity.Editorial;
-import com.noSQL.claseJava.repository.EditorialRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-@RequiredArgsConstructor
-@Service
-public class EditorialService {
+// Operaciones de las editoriales. La implementación está en service/impl/EditorialServiceImpl
+public interface EditorialService {
 
-    private final EditorialRepository editorialRepository;
+    Editorial createEditorial(EditorialRequest request);
 
-    @CacheEvict(cacheNames = CacheNames.EDITORIALS, allEntries = true)
-    public Editorial createEditorial(EditorialRequest request) {
-        Editorial editorial = Editorial.builder()
-                .name(request.getName())
-                .country(request.getCountry())
-                .website(request.getWebsite())
-                .build();
-        return editorialRepository.save(editorial);
-    }
+    List<Editorial> getAllEditorials();
 
-    @Cacheable(CacheNames.EDITORIALS)
-    public List<Editorial> getAllEditorials() {
-        return editorialRepository.findAll();
-    }
+    Optional<Editorial> getEditorialById(String id);
 
-    @Cacheable(cacheNames = CacheNames.EDITORIALS, unless = "#result == null")
-    public Optional<Editorial> getEditorialById(String id) {
-        return editorialRepository.findById(id);
-    }
+    Optional<Editorial> getEditorialByName(String name);
 
-    @Cacheable(cacheNames = CacheNames.EDITORIALS, unless = "#result == null")
-    public Optional<Editorial> getEditorialByName(String name) {
-        return editorialRepository.findByName(name);
-    }
+    // Libros de la editorial (lista guardada dentro de la editorial)
+    List<Editorial.BookReference> getEditorialBooks(String editorialId);
 
-    // Se devuelve un ArrayList (y no List.of()) porque el resultado se guarda en Redis
-    @Cacheable(CacheNames.EDITORIALS)
-    public List<Editorial.BookReference> getEditorialBooks(String editorialId) {
-        Optional<Editorial> editorial = editorialRepository.findById(editorialId);
-        if (editorial.isPresent() && editorial.get().getBooks() != null) {
-            return editorial.get().getBooks();
-        }
-        return new ArrayList<>();
-    }
+    // Edita la editorial y copia el cambio a los libros que la tienen. Devuelve null si no existe
+    Editorial updateEditorial(String id, EditorialRequest request);
 
-    @CacheEvict(cacheNames = CacheNames.EDITORIALS, allEntries = true)
-    public Editorial updateEditorial(String id, EditorialRequest request) {
-        Optional<Editorial> existingEditorial = editorialRepository.findById(id);
-        if (existingEditorial.isPresent()) {
-            Editorial editorial = existingEditorial.get();
-            editorial.setName(request.getName());
-            editorial.setCountry(request.getCountry());
-            editorial.setWebsite(request.getWebsite());
-            return editorialRepository.save(editorial);
-        }
-        return null;
-    }
-
-    @CacheEvict(cacheNames = CacheNames.EDITORIALS, allEntries = true)
-    public boolean deleteEditorial(String id) {
-        if (editorialRepository.existsById(id)) {
-            editorialRepository.deleteById(id);
-            return true;
-        }
-        return false;
-    }
+    // Devuelve false si la editorial no existe
+    boolean deleteEditorial(String id);
 }

@@ -1,4 +1,6 @@
-package com.noSQL.claseJava.service;
+package com.noSQL.claseJava.service.impl;
+
+import com.noSQL.claseJava.service.DenormalizationService;
 
 import com.noSQL.claseJava.dto.ReviewRequest;
 import com.noSQL.claseJava.entity.Book;
@@ -31,7 +33,7 @@ import static org.mockito.Mockito.when;
 // Pruebas de las reglas de reseñas. Se usan mocks, así que no hace falta tener MongoDB ni Redis.
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class ReviewServiceTest {
+class ReviewServiceImplTest {
 
     @Mock
     private ReviewRepository reviewRepository;
@@ -47,7 +49,7 @@ class ReviewServiceTest {
     private MongoTemplate mongoTemplate;
 
     @InjectMocks
-    private ReviewService reviewService;
+    private ReviewServiceImpl reviewService;
 
     @BeforeEach
     void setUp() {

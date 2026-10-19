@@ -56,7 +56,19 @@ docker run --rm -v "$PWD":/src:ro eclipse-temurin:17-jdk \
   sh -c 'cp -r /src /workspace && cd /workspace && ./gradlew --no-daemon test'
 ```
 
-Las pruebas de `LoanServiceTest`, `ReviewServiceTest` y `DenormalizationServiceTest` usan mocks y **no necesitan** MongoDB ni Redis. La prueba `contextLoads` del profesor levanta la aplicación completa: si MongoDB no está corriendo, se demora unos 30 segundos esperando la conexión, pero igual pasa.
+Las pruebas de `BookServiceImplTest`, `LoanServiceImplTest`, `ReviewServiceImplTest` y `DenormalizationServiceImplTest` usan mocks y **no necesitan** MongoDB ni Redis. La prueba `contextLoads` del profesor levanta la aplicación completa: si MongoDB no está corriendo, se demora unos 30 segundos esperando la conexión, pero igual pasa.
+
+## Estructura del proyecto
+
+| Paquete (`com.noSQL.claseJava`) | Qué tiene |
+|---------------------------------|-----------|
+| `controllers` | Los endpoints REST |
+| `service` | Las **interfaces** de los servicios (qué operaciones hay) |
+| `service/impl` | Las **implementaciones** (`...ServiceImpl`): reglas de negocio, caché de Redis y consistencia |
+| `repository` | Repositorios de MongoDB con consultas derivadas y `@Query` |
+| `entity` / `dto` | Documentos de MongoDB / datos que entran y salen de la API |
+| `config` | Índices de MongoDB y configuración de Redis |
+| `exception` | Errores de negocio y respuestas de error (400, 404, 409) |
 
 ## Modelo de datos
 
@@ -79,6 +91,7 @@ Toda la lógica de copias está en `DenormalizationService`.
 | Se crea, edita o borra una reseña | Se recalcula el promedio del libro con una agregación y se ajusta el contador del usuario |
 | Cambia el título o el autor de un libro | Préstamos, reseñas, favoritos, últimos préstamos de los usuarios, autor, editorial y categorías |
 | Cambia el nombre o el email de un usuario | Préstamos, reseñas, favoritos y el préstamo actual del libro |
+| Se edita un autor, una editorial o una categoría | La copia que hay dentro de cada libro (y el nombre del autor en préstamos y favoritos) |
 | Se borra un libro o un usuario | Se borran sus reseñas y favoritos. El historial de préstamos se deja a propósito (ya tiene su copia de los datos) |
 
 **Una sola copia física por libro:** se protege de tres formas: (1) se revisa en el código, (2) el libro se marca como prestado con una operación atómica que solo funciona si no estaba prestado, y (3) un índice único parcial en `loans` no deja guardar dos préstamos `ACTIVE` del mismo libro.
@@ -217,6 +230,7 @@ curl localhost:8080/api/loans/stats
 ## Notas
 
 - `available` ya no se envía al crear o editar un libro: lo maneja la lógica de préstamos y siempre es lo contrario de `loaned`.
+- Al crear un libro, el autor, la editorial y las categorías se buscan **por nombre**. Si ya existen, se usan sus datos guardados y solo se completan los campos que estaban vacíos (por ejemplo, una `biography` que antes no se envió). Para cambiar un dato que ya tenía valor se usa `PUT /api/authors/{id}` (o `/api/editorials/{id}`, `/api/categories/{id}`), y el cambio llega a todos los libros.
 - Los libros creados antes de este taller no tienen los campos nuevos. Las consultas los tratan como disponibles y los campos se llenan solos con el primer préstamo o la primera reseña.
 - Para generar el `.zip` de entrega en el Escritorio (`nosqltallerJuanJoseOspinaSanchez.zip`, sin archivos de compilación):
   ```bash

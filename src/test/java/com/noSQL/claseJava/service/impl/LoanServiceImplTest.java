@@ -1,4 +1,5 @@
-package com.noSQL.claseJava.service;
+package com.noSQL.claseJava.service.impl;
+
 
 import com.mongodb.client.result.UpdateResult;
 import com.noSQL.claseJava.dto.LoanRequest;
@@ -41,7 +42,7 @@ import static org.mockito.Mockito.when;
 // Pruebas de las reglas de préstamo. Se usan mocks, así que no hace falta tener MongoDB ni Redis.
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class LoanServiceTest {
+class LoanServiceImplTest {
 
     @Mock
     private LoanRepository loanRepository;
@@ -53,7 +54,7 @@ class LoanServiceTest {
     private MongoTemplate mongoTemplate;
 
     @InjectMocks
-    private LoanService loanService;
+    private LoanServiceImpl loanService;
 
     private Book book;
 

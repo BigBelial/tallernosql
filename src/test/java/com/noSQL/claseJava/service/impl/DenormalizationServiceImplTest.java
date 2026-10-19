@@ -1,4 +1,5 @@
-package com.noSQL.claseJava.service;
+package com.noSQL.claseJava.service.impl;
+
 
 import com.noSQL.claseJava.entity.Book;
 import com.noSQL.claseJava.entity.Review;
@@ -31,7 +32,7 @@ import static org.mockito.Mockito.when;
 // Pruebas del cálculo del promedio de calificaciones que se guarda en el libro
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class DenormalizationServiceTest {
+class DenormalizationServiceImplTest {
 
     @Mock
     private MongoTemplate mongoTemplate;
@@ -43,7 +44,7 @@ class DenormalizationServiceTest {
     private FavoritesRepository favoritesRepository;
 
     @InjectMocks
-    private DenormalizationService denormalizationService;
+    private DenormalizationServiceImpl denormalizationService;
 
     @Test
     void refreshBookRatingSavesTheRoundedAverageAndTheTotal() {

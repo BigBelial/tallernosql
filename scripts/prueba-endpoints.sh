@@ -381,6 +381,41 @@ expect_true '.book.averageRating == 5 and .book.totalReviews == 1' "El promedio 
 req DELETE "/api/users/$USER_2"
 expect_status 404 "Borrar un usuario que ya no existe"
 
+# ---------- 8.1 Autor, editorial y categoría que ya existían ----------
+
+section "8.1 Autor, editorial y categoría que ya existían (datos que faltaban)"
+req POST /api/books "{\"uniqueIdentifier\":\"ISBN-$RUN-G1\",\"title\":\"Libro G1 $RUN\",\"author\":{\"fullName\":\"Autor G $RUN\",\"nationality\":\"Colombiana\"},\"editorial\":{\"name\":\"Editorial G $RUN\",\"country\":\"Argentina\"},\"categories\":[{\"name\":\"Categoria G $RUN\"}]}"
+expect_status 201 "Crear un libro sin biografía, sin sitio web y sin descripción"
+BOOK_G1=$(json .id)
+AUTHOR_G=$(json .author.id)
+EDITORIAL_G=$(json .editorial.id)
+CATEGORY_G=$(json .categories[0].id)
+req POST /api/books "{\"uniqueIdentifier\":\"ISBN-$RUN-G2\",\"title\":\"Libro G2 $RUN\",\"author\":{\"fullName\":\"Autor G $RUN\",\"nationality\":\"Colombiana\",\"biography\":\"ESPANIOL\"},\"editorial\":{\"name\":\"Editorial G $RUN\",\"country\":\"Argentina\",\"website\":\"www\"},\"categories\":[{\"name\":\"Categoria G $RUN\",\"description\":\"hola\"}]}"
+expect_status 201 "Crear otro libro con el mismo autor, ahora con biografía, sitio web y descripción"
+expect_true '.author.biography == "ESPANIOL" and .editorial.website == "www" and .categories[0].description == "hola"' "El libro nuevo trae los datos que se enviaron"
+req GET "/api/books/$BOOK_G1"
+expect_true '.book.author.biography == "ESPANIOL" and .book.editorial.website == "www" and .book.categories[0].description == "hola"' "El libro anterior también recibe los datos completados"
+req GET "/api/authors/$AUTHOR_G"
+expect_true '.biography == "ESPANIOL"' "El autor queda guardado con la biografía"
+
+create_loan "$USER_1" "$BOOK_G1"
+expect_status 201 "Usuario 1 pide el libro G1"
+req POST "/api/users/$USER_1/favorites/$BOOK_G1"
+req PUT "/api/authors/$AUTHOR_G" "{\"fullName\":\"Autor G editado $RUN\",\"nationality\":\"Colombiana\",\"biography\":\"Nueva biografía\"}"
+expect_status 200 "Editar el autor"
+req GET "/api/books/$BOOK_G1"
+expect_true ".book.author.fullName == \"Autor G editado $RUN\" and .book.author.biography == \"Nueva biografía\"" "El cambio del autor llega a sus libros"
+req GET "/api/loans/book/$BOOK_G1"
+expect_true "all(.[]; .bookAuthor == \"Autor G editado $RUN\")" "El nombre nuevo del autor llega a los préstamos"
+req GET "/api/users/$USER_1/favorites"
+expect_true "any(.books[]; .bookId == \"$BOOK_G1\" and .authorName == \"Autor G editado $RUN\")" "El nombre nuevo del autor llega a favoritos"
+req PUT "/api/editorials/$EDITORIAL_G" "{\"name\":\"Editorial G $RUN\",\"country\":\"Argentina\",\"website\":\"nuevo.com\"}"
+expect_status 200 "Editar la editorial"
+req PUT "/api/categories/$CATEGORY_G" "{\"name\":\"Categoria G $RUN\",\"description\":\"Nueva descripción\"}"
+expect_status 200 "Editar la categoría"
+req GET "/api/books/$BOOK_G1"
+expect_true '.book.editorial.website == "nuevo.com" and .book.categories[0].description == "Nueva descripción"' "Los cambios de la editorial y la categoría llegan a los libros"
+
 # ---------- 9. Índices y endpoints del taller anterior ----------
 
 section "9. Índices en MongoDB"
